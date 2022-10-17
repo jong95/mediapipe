@@ -48,6 +48,12 @@ mediapipe_proto_library(
     deps = ["//mediapipe/util:color_proto"],
 )
 
+mediapipe_proto_library(
+    name = "kalidokit_data_proto",
+    srcs = ["kalidokit_data.proto"],
+    visibility = ["//visibility:public"],
+)
+
 cc_library(
     name = "audio_decoder",
     srcs = ["audio_decoder.cc"],

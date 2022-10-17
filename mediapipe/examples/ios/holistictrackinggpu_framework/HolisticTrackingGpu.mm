@@ -9,7 +9,7 @@
 #include <utility>
 
 #include "mediapipe/framework/calculator_framework.h"
-#include "mediapipe/framework/formats/landmark.pb.h"
+#include "mediapipe/util/kalidokit.pb.h"
 #include "mediapipe/framework/formats/matrix_data.pb.h"
 
 @interface HolisticTrackingGpu () <MPPGraphDelegate>
@@ -127,21 +127,15 @@
 - (void)mediapipeGraph:(MPPGraph *)graph
        didOutputPacket:(const ::mediapipe::Packet &)packet
             fromStream:(const std::string &)streamName {
-  // TODO: Change kalidokit data type.
   if (streamName == self.kLandmarksOutputStream) {
     if (packet.IsEmpty()) {
       NSLog(@"[TS:%lld] No face landmarks", packet.Timestamp().Value());
       return;
     }
-    const auto &face_landmarks =
-        packet.Get<std::vector<::mediapipe::NormalizedLandmark>>();
 
-    NSLog(@"\tNumber of landmarks: %d", face_landmarks.landmark_size());
-    for (int i = 0; i < face_landmarks.landmark_size(); ++i) {
-      NSLog(@"\t\tLandmark[%d]: (%f, %f, %f)", i,
-            face_landmarks.landmark(i).x(), face_landmarks.landmark(i).y(),
-            face_landmarks.landmark(i).z());
-    }
+    const auto &kalidokit_data =
+        packet.Get<std::vector<::mediapipe::KalidokitData>>();
+    NSLog(@"\t\thead.x: %f", kalidokit_data.x());
   }
 }
 

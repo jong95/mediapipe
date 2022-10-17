@@ -45,16 +45,7 @@ mediapipe_simple_subgraph(
     graph = "holistic_tracking_to_kalidokit_data.pbtxt",
     register_as = "HolisticTrackingToKalidokitData",
     deps = [
-        "//mediapipe/calculators/core:concatenate_proto_list_calculator",
-        "//mediapipe/calculators/core:concatenate_vector_calculator",
-        "//mediapipe/calculators/core:merge_calculator",
-        "//mediapipe/calculators/core:split_proto_list_calculator",
-        "//mediapipe/calculators/core:split_vector_calculator",
-        "//mediapipe/calculators/util:detections_to_render_data_calculator",
-        "//mediapipe/calculators/util:landmarks_to_render_data_calculator",
-        "//mediapipe/calculators/util:rect_to_render_data_calculator",
-        "//mediapipe/calculators/util:rect_to_render_scale_calculator",
-        "//mediapipe/modules/holistic_landmark:hand_wrist_for_pose",
+        "//mediapipe/calculators/util:landmarks_to_kalidokit_data_calculator",
     ],
 )
 
