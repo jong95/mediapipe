@@ -2,10 +2,8 @@
 
 - BUILD
   -- landmarks_to_kalidokit_data_calculator
-  --- landmarks_to_kalidokit_data_calculator_cc_proto (?)
-  --- //mediapipe/util:kalidokit_data_cc_proto
-
-  -- landmarks_to_kalidokit_data_calculator_proto
+  --- kalidokit_data_cc_proto
+  -- kalidokit_data_cc_proto
 
 - landmarks_to_kalidokit_data_calculator.h
 - landmarks_to_kalidokit_data_calculator.cc
