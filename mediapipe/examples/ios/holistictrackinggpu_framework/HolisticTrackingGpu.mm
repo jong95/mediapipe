@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "mediapipe/framework/calculator_framework.h"
+#include "mediapipe/framework/formats/landmark.pb.h"
 #include "mediapipe/framework/formats/matrix_data.pb.h"
 
 @interface HolisticTrackingGpu () <MPPGraphDelegate>
@@ -17,6 +18,7 @@
 @property(nonatomic) NSString *graphName;
 @property(nonatomic) const char *graphInputStream;
 @property(nonatomic) const char *graphOutputStream;
+@property(nonatomic) const char *kLandmarksOutputStream;
 @end
 
 @implementation HolisticTrackingGpu {
@@ -42,6 +44,7 @@
   self.graphName = @"holistic_tracking_gpu";
   self.graphInputStream = "input_video";
   self.graphOutputStream = "output_video";
+  self.kLandmarksOutputStream = "face_landmarks";
 
   // 3. Set time converter function.
   self.timestampConverter = [[MPPTimestampConverter alloc] init];
@@ -51,7 +54,11 @@
   [self.mediapipeGraph addFrameOutputStream:self.graphOutputStream
                            outputPacketType:MPPPacketTypePixelBuffer];
 
-  // 5. Set delegate as self.
+  // 5. Add face landmark data output stream.
+  [self.mediapipeGraph addFrameOutputStream:self.kLandmarksOutputStream
+                           outputPacketType:MPPPacketTypePixelBuffer];
+
+  // 6. Set delegate as self.
   self.mediapipeGraph.delegate = self;
 
   return self;
@@ -114,6 +121,27 @@
               fromStream:(const std::string &)streamName {
   if (streamName == self.graphOutputStream) {
     [_delegate holisticTrackingGpu:self didOutputPixelBuffer:pixelBuffer];
+  }
+}
+
+- (void)mediapipeGraph:(MPPGraph *)graph
+       didOutputPacket:(const ::mediapipe::Packet &)packet
+            fromStream:(const std::string &)streamName {
+  // TODO: Change kalidokit data type.
+  if (streamName == self.kLandmarksOutputStream) {
+    if (packet.IsEmpty()) {
+      NSLog(@"[TS:%lld] No face landmarks", packet.Timestamp().Value());
+      return;
+    }
+    const auto &face_landmarks =
+        packet.Get<std::vector<::mediapipe::NormalizedLandmark>>();
+
+    NSLog(@"\tNumber of landmarks: %d", face_landmarks.landmark_size());
+    for (int i = 0; i < face_landmarks.landmark_size(); ++i) {
+      NSLog(@"\t\tLandmark[%d]: (%f, %f, %f)", i,
+            face_landmarks.landmark(i).x(), face_landmarks.landmark(i).y(),
+            face_landmarks.landmark(i).z());
+    }
   }
 }
 

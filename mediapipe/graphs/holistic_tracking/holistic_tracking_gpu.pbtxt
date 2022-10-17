@@ -6,6 +6,9 @@ input_stream: "input_video"
 # GPU image with rendered results. (GpuBuffer)
 output_stream: "output_video"
 
+# Kalidokit calculated vector result.
+output_stream: "kalidokit_data_vector"
+
 # Throttles the images flowing downstream for flow control. It passes through
 # the very first incoming image unaltered, and waits for downstream nodes
 # (calculators and subgraphs) in the graph to finish their tasks before it
@@ -64,6 +67,15 @@ node {
   input_stream: "RIGHT_HAND_LANDMARKS:right_hand_landmarks"
   input_stream: "FACE_LANDMARKS:face_landmarks"
   output_stream: "RENDER_DATA_VECTOR:render_data_vector"
+}
+
+node {
+  calculator: "HolisticTrackingToKalidokitData"
+  input_stream: "POSE_LANDMARKS:pose_landmarks"
+  input_stream: "LEFT_HAND_LANDMARKS:left_hand_landmarks"
+  input_stream: "RIGHT_HAND_LANDMARKS:right_hand_landmarks"
+  input_stream: "FACE_LANDMARKS:face_landmarks"
+  output_stream: "KALIDOKIT_DATA_VECTOR:kalidokit_data_vector"
 }
 
 # Draws annotations and overlays them on top of the input images.

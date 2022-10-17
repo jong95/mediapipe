@@ -73,6 +73,7 @@ objc_library(
         "//mediapipe:ios_x86_64": [],
         "//conditions:default": [
             "//mediapipe/graphs/holistic_tracking:holistic_tracking_gpu_deps",
+            "//mediapipe/framework/formats:landmark_cc_proto",
         ],
     }),
 )

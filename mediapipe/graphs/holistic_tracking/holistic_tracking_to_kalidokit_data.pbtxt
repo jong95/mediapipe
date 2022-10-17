@@ -1,0 +1,22 @@
+# Converts pose + hands + face landmarks to a kalidokit data.
+
+type: "HolisticTrackingToKalidokitData"
+
+# Pose landmarks. (NormalizedLandmarkList)
+input_stream: "POSE_LANDMARKS:pose_landmarks"
+# Left hand landmarks. (NormalizedLandmarkList)
+input_stream: "LEFT_HAND_LANDMARKS:left_hand_landmarks"
+# Right hand landmarks. (NormalizedLandmarkList)
+input_stream: "RIGHT_HAND_LANDMARKS:right_hand_landmarks"
+# Face landmarks. (NormalizedLandmarkList)
+input_stream: "FACE_LANDMARKS:face_landmarks"
+
+# Render data vector. (std::vector<RenderData>)
+output_stream: "KALIDOKIT_DATA_VECTOR:kalidokit_data_vector"
+
+# Gets pose landmarks before wrists.
+node {
+  calculator: "SplitNormalizedLandmarkListCalculator"
+  input_stream: "face_landmarks"
+  output_stream: "kalidokit_data"
+}
