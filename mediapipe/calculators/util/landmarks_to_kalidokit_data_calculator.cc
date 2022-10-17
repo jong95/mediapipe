@@ -15,34 +15,22 @@
 
 namespace mediapipe
 {
-
-  constexpr char kFaceLandmarksTag[] = "LANDMARKS";
+  constexpr char kFaceLandmarksTag[] = "FACE_LANDMARKS";
   constexpr char kKalidokitDataTag[] = "KALIDOKIT_DATA";
 
   absl::Status LandmarksToKalidokitDataCalculator::GetContract(
       CalculatorContract *cc)
   {
-    // cc->Inputs().NumEntries() returns the number of input streams
-    // for the PacketClonerCalculator
-    const int input_num_entries = cc->Inputs().NumEntries();
-    std::cout << "input count: " << input_num_entries << std::endl;
-    bool has_landmarks_tag = cc->Inputs().HasTag("LANDMARKS");
-    std::cout << "has_landmarks_tag: " << has_landmarks_tag << std::endl;
+    RET_CHECK(cc->Inputs().HasTag(kFaceLandmarksTag));
+    RET_CHECK(cc->Outputs().HasTag(kKalidokitDataTag));
 
     if (cc->Inputs().HasTag(kFaceLandmarksTag))
     {
-      std::cout << "Has " << kFaceLandmarksTag << " tag name in input." << std::endl;
-      cc->Inputs().Tag(kFaceLandmarksTag).Set<LandmarkList>();
-    }
-    else
-    {
-      std::cout << "Not has " << kFaceLandmarksTag << " tag name in input." << std::endl;
+      cc->Inputs().Tag(kFaceLandmarksTag).Set<NormalizedLandmarkList>();
     }
 
+    // cc->Outputs().Tag(kKalidokitDataTag).Set<RenderData>();
     cc->Outputs().Tag(kKalidokitDataTag).Set<KalidokitData>();
-
-    std::cout << "Success to process GetContract function." << std::endl;
-
     return absl::OkStatus();
   }
 
@@ -61,39 +49,37 @@ namespace mediapipe
       return absl::OkStatus();
     }
 
-    if (cc->Inputs().HasTag(kFaceLandmarksTag))
-    {
-      // 1. Get face landmark list.
-      const LandmarkList &landmarks =
-          cc->Inputs().Tag(kFaceLandmarksTag).Get<LandmarkList>();
+    const NormalizedLandmarkList &landmarks =
+        cc->Inputs().Tag(kFaceLandmarksTag).Get<NormalizedLandmarkList>();
+    // std::cout << "landmarks size: " << landmarks.landmark_size() << std::endl;
+    // for (int i = 0; i < landmarks.landmark_size(); ++i)
+    // {
+    //   const NormalizedLandmark &landmark = landmarks.landmark(i);
+    //   std::cout << "landmark[" << i << "].x: " << landmark.x() << std::endl;
+    // }
 
-      // 2. Get each face landmark point.
-      for (int i = 0; i < landmarks.landmark_size(); ++i)
-      {
-        const Landmark &landmark = landmarks.landmark(i);
-        printf("landmark[%d]: x(%f) y(%f) z(%f)\n",
-               i, landmark.x(), landmark.y(), landmark.z());
-      }
+    auto kalidokit_data = absl::make_unique<KalidokitData>();
+    auto head_data = absl::make_unique<HeadData>();
+    auto head_data_degrees = absl::make_unique<HeadData_Degrees>();
 
-      // 3. Set kalidokit data.
-      std::unique_ptr<KalidokitData>
-          kalidokit_data = absl::make_unique<KalidokitData>();
-      std::unique_ptr<mediapipe::HeadData>
-          kalidokit_head_data = absl::make_unique<mediapipe::HeadData>();
-      std::unique_ptr<mediapipe::HeadData_Degrees>
-          kalidokit_head_data_degree = absl::make_unique<mediapipe::HeadData_Degrees>();
+    head_data_degrees->set_x(0.5);
+    head_data_degrees->set_y(0.4);
+    head_data_degrees->set_z(0.3);
+    ::mediapipe::HeadData_Degrees *head_data_degrees_pointer = head_data_degrees.release();
 
-      kalidokit_head_data_degree->set_x(0.5);
-      kalidokit_head_data->set_allocated_degrees(kalidokit_head_data_degree.get());
-      kalidokit_head_data->set_x(1.0);
-      kalidokit_data->set_allocated_head_data(kalidokit_head_data.get());
+    head_data->set_allocated_degrees(head_data_degrees_pointer);
+    head_data->set_x(0.8);
+    head_data->set_y(0.7);
+    head_data->set_z(0.6);
+    head_data->set_width(100);
+    head_data->set_height(200);
+    ::mediapipe::HeadData *head_data_pointer = head_data.release();
 
-      // 4. Return kalidokit data.
-      cc->Outputs()
-          .Tag(kKalidokitDataTag)
-          .Add(kalidokit_data.release(), cc->InputTimestamp());
-    }
+    kalidokit_data->set_allocated_head_data(head_data_pointer);
 
+    cc->Outputs()
+        .Tag(kKalidokitDataTag)
+        .Add(kalidokit_data.release(), cc->InputTimestamp());
     return absl::OkStatus();
   }
 

@@ -8,14 +8,39 @@
 #include <string>
 #include <utility>
 
-// #include "mediapipe/calculators/util/kalidokit_data.pb.h"
+#include "mediapipe/calculators/util/kalidokit_data.pb.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/formats/matrix_data.pb.h"
 
 @interface KalidokitData ()
+
+- (instancetype)init;
+
 @end
 
 @implementation KalidokitData
+
+- (instancetype)init {
+  self = [super init];
+
+  _head_data = [HeadData alloc];
+  _head_data.degrees = [Degrees alloc];
+
+  return self;
+}
+
+@end
+
+@interface HeadData ()
+@end
+
+@implementation HeadData
+@end
+
+@interface Degrees ()
+@end
+
+@implementation Degrees
 @end
 
 @interface HolisticTrackingGpu () <MPPGraphDelegate>
@@ -25,6 +50,7 @@
 @property(nonatomic) const char *graphInputStream;
 @property(nonatomic) const char *graphOutputStream;
 @property(nonatomic) const char *kKalidokitOutputStream;
+@property(nonatomic) KalidokitData *kalidokitData;
 @end
 
 @implementation HolisticTrackingGpu
@@ -44,6 +70,7 @@
 - (instancetype)init {
   // 1. Call super function.
   self = [super init];
+  _kalidokitData = [[KalidokitData alloc] init];
 
   // 2. Set graph name and graph input, output stream name.
   self.graphName = @"holistic_tracking_gpu";
@@ -60,8 +87,8 @@
                            outputPacketType:MPPPacketTypePixelBuffer];
 
   // 5. Add face landmark data output stream.
-  // [self.mediapipeGraph addFrameOutputStream:self.kKalidokitOutputStream
-  //                          outputPacketType:MPPPacketTypePixelBuffer];
+  [self.mediapipeGraph addFrameOutputStream:self.kKalidokitOutputStream
+                           outputPacketType:MPPPacketTypeRaw];
 
   // 6. Set delegate as self.
   self.mediapipeGraph.delegate = self;
@@ -132,20 +159,31 @@
 - (void)mediapipeGraph:(MPPGraph *)graph
        didOutputPacket:(const ::mediapipe::Packet &)packet
             fromStream:(const std::string &)streamName {
+  NSLog(@"call didOutputPacket()");
+
   if (streamName == self.kKalidokitOutputStream) {
     if (packet.IsEmpty()) {
       NSLog(@"[TS:%lld] No kalidokit data.", packet.Timestamp().Value());
       return;
     }
 
-    // const auto &kalidokit_data = packet.Get<::mediapipe::KalidokitData>();
-    // NSLog(@"\t\kalidokit_data.get_x(): %b", kalidokit_data.has_head_data());
+    const auto &kalidokit_data = packet.Get<::mediapipe::KalidokitData>();
+    NSLog(@"\tkalidokit_data.has_head_data(): %b",
+          kalidokit_data.has_head_data());
+    const ::mediapipe::HeadData &head_data = kalidokit_data.head_data();
+    const ::mediapipe::HeadData_Degrees &degrees = head_data.degrees();
+    NSLog(@"\thead_data.get_x(): %f", head_data.x());
 
-    // KalidokitData *kalidokitData = [KalidokitData alloc];
-    // kalidokitData.x = 0.5;
+    _kalidokitData.head_data.x = head_data.x();
+    _kalidokitData.head_data.y = head_data.y();
+    _kalidokitData.head_data.z = head_data.z();
+    _kalidokitData.head_data.width = head_data.width();
+    _kalidokitData.head_data.height = head_data.height();
+    _kalidokitData.head_data.degrees.x = degrees.x();
+    _kalidokitData.head_data.degrees.y = degrees.y();
+    _kalidokitData.head_data.degrees.z = degrees.z();
 
-    // // Pass kalidokit data to swift function.
-    // [_delegate holisticTrackingGpu:self didOutputKalidokitData:kalidokitData];
+    [_delegate holisticTrackingGpu:self didOutputKalidokitData:_kalidokitData];
   }
 }
 

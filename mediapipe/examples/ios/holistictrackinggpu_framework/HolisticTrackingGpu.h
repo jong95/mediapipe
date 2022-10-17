@@ -2,6 +2,9 @@
 #import <AVFoundation/AVFoundation.h>
 
 @class KalidokitData;
+@class HeadData;
+@class Degrees;
+
 @class HolisticTrackingGpu;
 
 @protocol TrackerDelegate <NSObject>
@@ -12,6 +15,19 @@
 @end
 
 @interface KalidokitData : NSObject
+@property(nonatomic) HeadData *head_data;
+@end
+
+@interface HeadData : NSObject
+@property(nonatomic) float x;
+@property(nonatomic) float y;
+@property(nonatomic) float z;
+@property(nonatomic) int width;
+@property(nonatomic) int height;
+@property(nonatomic) Degrees *degrees;
+@end
+
+@interface Degrees : NSObject
 @property(nonatomic) float x;
 @property(nonatomic) float y;
 @property(nonatomic) float z;

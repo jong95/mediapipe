@@ -1,0 +1,25 @@
+# Converts pose + hands + face landmarks to a render data vector.
+
+type: "HolisticTrackingToKalidokitData"
+
+# Pose landmarks. (NormalizedLandmarkList)
+input_stream: "POSE_LANDMARKS:landmarks"
+
+# Left hand landmarks. (NormalizedLandmarkList)
+input_stream: "LEFT_HAND_LANDMARKS:left_hand_landmarks"
+
+# Right hand landmarks. (NormalizedLandmarkList)
+input_stream: "RIGHT_HAND_LANDMARKS:right_hand_landmarks"
+
+# Face landmarks. (NormalizedLandmarkList)
+input_stream: "FACE_LANDMARKS:face_landmarks"
+
+# Kalidokit data.
+output_stream: "KALIDOKIT_DATA:kalidokit_data"
+
+# Converts face joints to cyan circles.
+node {
+  calculator: "LandmarksToKalidokitDataCalculator"
+  input_stream: "FACE_LANDMARKS:face_landmarks"
+  output_stream: "KALIDOKIT_DATA:kalidokit_data"
+}

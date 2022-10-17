@@ -721,24 +721,8 @@ cc_library(
     hdrs = ["landmarks_to_kalidokit_data_calculator.h"],
     visibility = ["//visibility:public"],
     deps = [
-        ":kalidokit_data_cc_proto",
-        "//mediapipe/framework:calculator_framework",
-        "//mediapipe/framework/formats:landmark_cc_proto",
-        "//mediapipe/framework/formats:location_data_cc_proto",
-        "//mediapipe/framework/port:ret_check",
-        "@com_google_absl//absl/memory",
-        "@com_google_absl//absl/strings",
-    ],
-    alwayslink = 1,
-)
-
-cc_library(
-    name = "landmarks_to_render_data_calculator2",
-    srcs = ["landmarks_to_render_data_calculator2.cc"],
-    hdrs = ["landmarks_to_render_data_calculator2.h"],
-    visibility = ["//visibility:public"],
-    deps = [
         ":landmarks_to_render_data_calculator_cc_proto",
+        ":kalidokit_data_cc_proto",
         "//mediapipe/framework:calculator_framework",
         "//mediapipe/framework:calculator_options_cc_proto",
         "//mediapipe/framework/formats:landmark_cc_proto",
