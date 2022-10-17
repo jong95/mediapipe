@@ -15,6 +15,7 @@
 
 namespace mediapipe
 {
+  using Eigen::Vector3f;
   constexpr char kFaceLandmarksTag[] = "FACE_LANDMARKS";
   constexpr char kKalidokitDataTag[] = "KALIDOKIT_DATA";
 
@@ -57,6 +58,12 @@ namespace mediapipe
     //   const NormalizedLandmark &landmark = landmarks.landmark(i);
     //   std::cout << "landmark[" << i << "].x: " << landmark.x() << std::endl;
     // }
+    Vector3f p1, p2, p3, p4, p3mid;
+    p1 << landmarks.landmark(21).x(), landmarks.landmark(21).y(), landmarks.landmark(21).z();
+    p2 << landmarks.landmark(251).x(), landmarks.landmark(251).y(), landmarks.landmark(251).z();
+    p3 << landmarks.landmark(397).x(), landmarks.landmark(397).y(), landmarks.landmark(397).z();
+    p4 << landmarks.landmark(172).x(), landmarks.landmark(172).y(), landmarks.landmark(172).z();
+    p3mid = (p3 + p4) / 2;
 
     auto kalidokit_data = absl::make_unique<KalidokitData>();
     auto head_data = absl::make_unique<HeadData>();

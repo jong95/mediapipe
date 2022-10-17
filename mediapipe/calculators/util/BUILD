@@ -721,8 +721,8 @@ cc_library(
     hdrs = ["landmarks_to_kalidokit_data_calculator.h"],
     visibility = ["//visibility:public"],
     deps = [
-        ":landmarks_to_render_data_calculator_cc_proto",
         ":kalidokit_data_cc_proto",
+        ":landmarks_to_render_data_calculator_cc_proto",
         "//mediapipe/framework:calculator_framework",
         "//mediapipe/framework:calculator_options_cc_proto",
         "//mediapipe/framework/formats:landmark_cc_proto",
@@ -732,6 +732,7 @@ cc_library(
         "//mediapipe/util:render_data_cc_proto",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
+        "@eigen_archive//:eigen3",
     ],
     alwayslink = 1,
 )
