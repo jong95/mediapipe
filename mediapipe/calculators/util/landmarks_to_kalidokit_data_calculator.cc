@@ -13,91 +13,89 @@
 // limitations under the License.
 #include "mediapipe/calculators/util/landmarks_to_kalidokit_data_calculator.h"
 
-#include "absl/memory/memory.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "mediapipe/calculators/util/landmarks_to_kalidokit_data_calculator.pb.h"
-#include "mediapipe/framework/calculator_framework.h"
-#include "mediapipe/framework/formats/landmark.pb.h"
-#include "mediapipe/framework/formats/location_data.pb.h"
-#include "mediapipe/framework/port/ret_check.h"
-#include "mediapipe/util/kalidokit_data.pb.h"
 namespace mediapipe
 {
 
-  namespace
+  constexpr char kFaceLandmarksTag[] = "LANDMARKS";
+  constexpr char kKalidokitDataTag[] = "KALIDOKIT_DATA";
+
+  absl::Status LandmarksToKalidokitDataCalculator::GetContract(
+      CalculatorContract *cc)
   {
+    // cc->Inputs().NumEntries() returns the number of input streams
+    // for the PacketClonerCalculator
+    const int input_num_entries = cc->Inputs().NumEntries();
+    std::cout << "input count: " << input_num_entries << std::endl;
+    bool has_landmarks_tag = cc->Inputs().HasTag("LANDMARKS");
+    std::cout << "has_landmarks_tag: " << has_landmarks_tag << std::endl;
 
-    constexpr char kLandmarksTag[] = "LANDMARKS";
-    constexpr char kNormLandmarksTag[] = "NORM_LANDMARKS";
-    constexpr char kKalidokitDataTag[] = "KALIDOKIT_DATA";
-    constexpr char kLandmarkLabel[] = "KEYPOINT";
-
-    absl::Status LandmarksToKalidokitDataCalculator::GetContract(
-        CalculatorContract *cc)
+    if (cc->Inputs().HasTag(kFaceLandmarksTag))
     {
-      RET_CHECK(cc->Inputs().HasTag(kLandmarksTag) ||
-                cc->Inputs().HasTag(kNormLandmarksTag))
-          << "None of the input streams are provided.";
-      RET_CHECK(!(cc->Inputs().HasTag(kLandmarksTag) &&
-                  cc->Inputs().HasTag(kNormLandmarksTag)))
-          << "Can only one type of landmark can be taken. Either absolute or "
-             "normalized landmarks.";
+      std::cout << "Has " << kFaceLandmarksTag << " tag name in input." << std::endl;
+      cc->Inputs().Tag(kFaceLandmarksTag).Set<LandmarkList>();
+    }
+    else
+    {
+      std::cout << "Not has " << kFaceLandmarksTag << " tag name in input." << std::endl;
+    }
 
-      if (cc->Inputs().HasTag(kLandmarksTag))
-      {
-        cc->Inputs().Tag(kLandmarksTag).Set<LandmarkList>();
-      }
-      if (cc->Inputs().HasTag(kNormLandmarksTag))
-      {
-        cc->Inputs().Tag(kNormLandmarksTag).Set<NormalizedLandmarkList>();
-      }
-      cc->Outputs().Tag(kKalidokitDataTag).Set<KalidokitData>();
+    cc->Outputs().Tag(kKalidokitDataTag).Set<KalidokitData>();
+
+    std::cout << "Success to process GetContract function." << std::endl;
+
+    return absl::OkStatus();
+  }
+
+  absl::Status LandmarksToKalidokitDataCalculator::Open(CalculatorContext *cc)
+  {
+    cc->SetOffset(TimestampDiff(0));
+
+    return absl::OkStatus();
+  }
+
+  absl::Status LandmarksToKalidokitDataCalculator::Process(CalculatorContext *cc)
+  {
+    if (cc->Inputs().HasTag(kFaceLandmarksTag) &&
+        cc->Inputs().Tag(kFaceLandmarksTag).IsEmpty())
+    {
       return absl::OkStatus();
     }
 
-    absl::Status LandmarksToKalidokitDataCalculator::Open(CalculatorContext *cc)
+    if (cc->Inputs().HasTag(kFaceLandmarksTag))
     {
-      cc->SetOffset(TimestampDiff(0));
-      options_ = cc->Options<LandmarksToKalidokitDataCalculatorOptions>();
+      // 1. Get face landmark list.
+      const LandmarkList &landmarks =
+          cc->Inputs().Tag(kFaceLandmarksTag).Get<LandmarkList>();
 
-      // Parse landmarks connections to a vector.
-      RET_CHECK_EQ(options_.landmark_connections_size() % 2, 0)
-          << "Number of entries in landmark connections must be a multiple of 2";
-
-      return absl::OkStatus();
-    }
-
-    absl::Status LandmarksToKalidokitDataCalculator::Process(CalculatorContext *cc)
-    {
-      // Check that landmarks are not empty and skip rendering if so.
-      // Don't emit an empty packet for this timestamp.
-      if (cc->Inputs().HasTag(kLandmarksTag) &&
-          cc->Inputs().Tag(kLandmarksTag).IsEmpty())
+      // 2. Get each face landmark point.
+      for (int i = 0; i < landmarks.landmark_size(); ++i)
       {
-        return absl::OkStatus();
-      }
-      if (cc->Inputs().HasTag(kNormLandmarksTag) &&
-          cc->Inputs().Tag(kNormLandmarksTag).IsEmpty())
-      {
-        return absl::OkStatus();
+        const Landmark &landmark = landmarks.landmark(i);
+        printf("landmark[%d]: x(%f) y(%f) z(%f)\n",
+               i, landmark.x(), landmark.y(), landmark.z());
       }
 
-      if (cc->Inputs().HasTag(kLandmarksTag))
-      {
-        const LandmarkList &landmarks =
-            cc->Inputs().Tag(kLandmarksTag).Get<LandmarkList>();
-      }
+      // 3. Set kalidokit data.
+      std::unique_ptr<KalidokitData>
+          kalidokit_data = absl::make_unique<KalidokitData>();
+      std::unique_ptr<mediapipe::HeadData>
+          kalidokit_head_data = absl::make_unique<mediapipe::HeadData>();
+      std::unique_ptr<mediapipe::HeadData_Degrees>
+          kalidokit_head_data_degree = absl::make_unique<mediapipe::HeadData_Degrees>();
 
-      if (cc->Inputs().HasTag(kNormLandmarksTag))
-      {
-      }
+      kalidokit_head_data_degree->set_x(0.5);
+      kalidokit_head_data->set_allocated_degrees(kalidokit_head_data_degree.get());
+      kalidokit_head_data->set_x(1.0);
+      kalidokit_data->set_allocated_head_data(kalidokit_head_data.get());
 
+      // 4. Return kalidokit data.
       cc->Outputs()
           .Tag(kKalidokitDataTag)
-          .Add(render_data.release(), cc->InputTimestamp());
-      return absl::OkStatus();
+          .Add(kalidokit_data.release(), cc->InputTimestamp());
     }
 
-    REGISTER_CALCULATOR(LandmarksToKalidokitDataCalculator);
-  } // namespace mediapipe
+    return absl::OkStatus();
+  }
+
+  REGISTER_CALCULATOR(LandmarksToKalidokitDataCalculator);
+} // namespace mediapipe

@@ -8,9 +8,15 @@
 #include <string>
 #include <utility>
 
+// #include "mediapipe/calculators/util/kalidokit_data.pb.h"
 #include "mediapipe/framework/calculator_framework.h"
-#include "mediapipe/util/kalidokit.pb.h"
 #include "mediapipe/framework/formats/matrix_data.pb.h"
+
+@interface KalidokitData ()
+@end
+
+@implementation KalidokitData
+@end
 
 @interface HolisticTrackingGpu () <MPPGraphDelegate>
 @property(nonatomic) MPPGraph *mediapipeGraph;
@@ -18,11 +24,10 @@
 @property(nonatomic) NSString *graphName;
 @property(nonatomic) const char *graphInputStream;
 @property(nonatomic) const char *graphOutputStream;
-@property(nonatomic) const char *kLandmarksOutputStream;
+@property(nonatomic) const char *kKalidokitOutputStream;
 @end
 
-@implementation HolisticTrackingGpu {
-}
+@implementation HolisticTrackingGpu
 
 #pragma mark - Cleanup methods
 
@@ -44,7 +49,7 @@
   self.graphName = @"holistic_tracking_gpu";
   self.graphInputStream = "input_video";
   self.graphOutputStream = "output_video";
-  self.kLandmarksOutputStream = "face_landmarks";
+  self.kKalidokitOutputStream = "kalidokit_data";
 
   // 3. Set time converter function.
   self.timestampConverter = [[MPPTimestampConverter alloc] init];
@@ -55,8 +60,8 @@
                            outputPacketType:MPPPacketTypePixelBuffer];
 
   // 5. Add face landmark data output stream.
-  [self.mediapipeGraph addFrameOutputStream:self.kLandmarksOutputStream
-                           outputPacketType:MPPPacketTypePixelBuffer];
+  // [self.mediapipeGraph addFrameOutputStream:self.kKalidokitOutputStream
+  //                          outputPacketType:MPPPacketTypePixelBuffer];
 
   // 6. Set delegate as self.
   self.mediapipeGraph.delegate = self;
@@ -127,15 +132,20 @@
 - (void)mediapipeGraph:(MPPGraph *)graph
        didOutputPacket:(const ::mediapipe::Packet &)packet
             fromStream:(const std::string &)streamName {
-  if (streamName == self.kLandmarksOutputStream) {
+  if (streamName == self.kKalidokitOutputStream) {
     if (packet.IsEmpty()) {
-      NSLog(@"[TS:%lld] No face landmarks", packet.Timestamp().Value());
+      NSLog(@"[TS:%lld] No kalidokit data.", packet.Timestamp().Value());
       return;
     }
 
-    const auto &kalidokit_data =
-        packet.Get<std::vector<::mediapipe::KalidokitData>>();
-    NSLog(@"\t\thead.x: %f", kalidokit_data.x());
+    // const auto &kalidokit_data = packet.Get<::mediapipe::KalidokitData>();
+    // NSLog(@"\t\kalidokit_data.get_x(): %b", kalidokit_data.has_head_data());
+
+    // KalidokitData *kalidokitData = [KalidokitData alloc];
+    // kalidokitData.x = 0.5;
+
+    // // Pass kalidokit data to swift function.
+    // [_delegate holisticTrackingGpu:self didOutputKalidokitData:kalidokitData];
   }
 }
 

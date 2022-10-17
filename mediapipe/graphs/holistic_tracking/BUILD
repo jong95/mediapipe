@@ -41,11 +41,20 @@ mediapipe_simple_subgraph(
 )
 
 mediapipe_simple_subgraph(
-    name = "holistic_tracking_to_kalidokit_data",
-    graph = "holistic_tracking_to_kalidokit_data.pbtxt",
-    register_as = "HolisticTrackingToKalidokitData",
+    name = "holistic_tracking_to_render_data2",
+    graph = "holistic_tracking_to_render_data2.pbtxt",
+    register_as = "HolisticTrackingToRenderData2",
     deps = [
-        "//mediapipe/calculators/util:landmarks_to_kalidokit_data_calculator",
+        "//mediapipe/calculators/core:concatenate_proto_list_calculator",
+        "//mediapipe/calculators/core:concatenate_vector_calculator",
+        "//mediapipe/calculators/core:merge_calculator",
+        "//mediapipe/calculators/core:split_proto_list_calculator",
+        "//mediapipe/calculators/core:split_vector_calculator",
+        "//mediapipe/calculators/util:detections_to_render_data_calculator",
+        "//mediapipe/calculators/util:landmarks_to_render_data_calculator2",
+        "//mediapipe/calculators/util:rect_to_render_data_calculator",
+        "//mediapipe/calculators/util:rect_to_render_scale_calculator",
+        "//mediapipe/modules/holistic_landmark:hand_wrist_for_pose",
     ],
 )
 
@@ -53,7 +62,7 @@ cc_library(
     name = "holistic_tracking_gpu_deps",
     deps = [
         ":holistic_tracking_to_render_data",
-        ":holistic_tracking_to_kalidokit_data",
+        ":holistic_tracking_to_render_data2",
         "//mediapipe/calculators/core:flow_limiter_calculator",
         "//mediapipe/calculators/image:image_properties_calculator",
         "//mediapipe/calculators/util:annotation_overlay_calculator",

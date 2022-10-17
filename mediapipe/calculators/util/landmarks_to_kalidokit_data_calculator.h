@@ -17,13 +17,12 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-#include "mediapipe/calculators/util/landmarks_to_kalidokit_data_calculator.pb.h"
+#include "mediapipe/calculators/util/kalidokit_data.pb.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/calculator_options.pb.h"
 #include "mediapipe/framework/formats/landmark.pb.h"
 #include "mediapipe/framework/formats/location_data.pb.h"
 #include "mediapipe/framework/port/ret_check.h"
-#include "mediapipe/util/kalidokit_data.pb.h"
 namespace mediapipe
 {
 

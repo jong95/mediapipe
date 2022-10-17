@@ -17,20 +17,20 @@ syntax = "proto2";
 package mediapipe;
 
 message KalidokitData {
-  HeadData head_data = 1;
+  required HeadData head_data = 1;
 }
 
 message HeadData {
-  double x;
-  double y;
-  double z;
-  int32 width;
-  int32 height;
-  Degrees degrees;
+  required double x = 1 [default = 0.0];
+  required double y = 2 [default = 0.0];
+  required double z = 3 [default = 0.0];
+  required int32 width = 4 [default = 0];
+  required int32 height = 5 [default = 0];
+  required Degrees degrees = 6;
 
   message Degrees {
-    double x;
-    double y;
-    double z;
+    required double x = 1 [default = 0.0];
+    required double y = 2 [default = 0.0];
+    required double z = 3 [default = 0.0];
   }
 }
