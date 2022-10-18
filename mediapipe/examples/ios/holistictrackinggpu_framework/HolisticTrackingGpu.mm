@@ -23,18 +23,32 @@
 - (instancetype)init {
   self = [super init];
 
-  _head_data = [HeadData alloc];
-  _head_data.degrees = [Degrees alloc];
+  _head = [Head alloc];
+  _head.position = [Position alloc];
+  _head.normalized = [Normalized alloc];
+  _head.degrees = [Degrees alloc];
 
   return self;
 }
 
 @end
 
-@interface HeadData ()
+@interface Head ()
 @end
 
-@implementation HeadData
+@implementation Head
+@end
+
+@interface Position ()
+@end
+
+@implementation Position
+@end
+
+@interface Normalized ()
+@end
+
+@implementation Normalized
 @end
 
 @interface Degrees ()
@@ -168,20 +182,27 @@
     }
 
     const auto &kalidokit_data = packet.Get<::mediapipe::KalidokitData>();
-    NSLog(@"\tkalidokit_data.has_head_data(): %b",
-          kalidokit_data.has_head_data());
-    const ::mediapipe::HeadData &head_data = kalidokit_data.head_data();
-    const ::mediapipe::HeadData_Degrees &degrees = head_data.degrees();
-    NSLog(@"\thead_data.get_x(): %f", head_data.x());
+    NSLog(@"\tkalidokit_data.has_head(): %b", kalidokit_data.has_head());
+    const ::mediapipe::Head &head = kalidokit_data.head();
+    const ::mediapipe::Position &position = head.position();
+    const ::mediapipe::Normalized &normalized = head.normalized();
+    const ::mediapipe::Degrees &degrees = head.degrees();
+    NSLog(@"\thead.get_x(): %f", head.x());
 
-    _kalidokitData.head_data.x = head_data.x();
-    _kalidokitData.head_data.y = head_data.y();
-    _kalidokitData.head_data.z = head_data.z();
-    _kalidokitData.head_data.width = head_data.width();
-    _kalidokitData.head_data.height = head_data.height();
-    _kalidokitData.head_data.degrees.x = degrees.x();
-    _kalidokitData.head_data.degrees.y = degrees.y();
-    _kalidokitData.head_data.degrees.z = degrees.z();
+    _kalidokitData.head.x = head.x();
+    _kalidokitData.head.y = head.y();
+    _kalidokitData.head.z = head.z();
+    _kalidokitData.head.width = head.width();
+    _kalidokitData.head.height = head.height();
+    _kalidokitData.head.position.x = position.x();
+    _kalidokitData.head.position.y = position.y();
+    _kalidokitData.head.position.z = position.z();
+    _kalidokitData.head.normalized.x = normalized.x();
+    _kalidokitData.head.normalized.y = normalized.y();
+    _kalidokitData.head.normalized.z = normalized.z();
+    _kalidokitData.head.degrees.x = degrees.x();
+    _kalidokitData.head.degrees.y = degrees.y();
+    _kalidokitData.head.degrees.z = degrees.z();
 
     [_delegate holisticTrackingGpu:self didOutputKalidokitData:_kalidokitData];
   }

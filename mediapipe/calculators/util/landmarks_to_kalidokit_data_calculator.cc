@@ -1,21 +1,33 @@
-// Copyright 2019 The MediaPipe Authors.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 #include "mediapipe/calculators/util/landmarks_to_kalidokit_data_calculator.h"
 
 namespace mediapipe
 {
-  using Eigen::Vector3f;
+  const auto TWO_PI = M_PI * 2;
+  const auto PI = M_PI;
+
+  float normalizeAngle(float radians)
+  {
+    float angle = fmod(radians, TWO_PI);
+
+    if (angle > PI)
+    {
+      angle = angle - TWO_PI;
+    }
+    else
+    {
+      if (angle < -PI)
+      {
+        angle = TWO_PI + angle;
+      }
+      else
+      {
+        angle = angle;
+      }
+    }
+
+    return angle / PI;
+  }
+
   constexpr char kFaceLandmarksTag[] = "FACE_LANDMARKS";
   constexpr char kKalidokitDataTag[] = "KALIDOKIT_DATA";
 
@@ -44,12 +56,14 @@ namespace mediapipe
 
   absl::Status LandmarksToKalidokitDataCalculator::Process(CalculatorContext *cc)
   {
+    // 1. Check the data is empty.
     if (cc->Inputs().HasTag(kFaceLandmarksTag) &&
         cc->Inputs().Tag(kFaceLandmarksTag).IsEmpty())
     {
       return absl::OkStatus();
     }
 
+    // 2. Get face landmark data.
     const NormalizedLandmarkList &landmarks =
         cc->Inputs().Tag(kFaceLandmarksTag).Get<NormalizedLandmarkList>();
     // std::cout << "landmarks size: " << landmarks.landmark_size() << std::endl;
@@ -58,32 +72,88 @@ namespace mediapipe
     //   const NormalizedLandmark &landmark = landmarks.landmark(i);
     //   std::cout << "landmark[" << i << "].x: " << landmark.x() << std::endl;
     // }
-    Vector3f p1, p2, p3, p4, p3mid;
+
+    // 3. Mimic createEulerPlane function in kalidokit solution.
+    Eigen::Vector3f p1, p2, p3, p4, p3mid;
     p1 << landmarks.landmark(21).x(), landmarks.landmark(21).y(), landmarks.landmark(21).z();
     p2 << landmarks.landmark(251).x(), landmarks.landmark(251).y(), landmarks.landmark(251).z();
     p3 << landmarks.landmark(397).x(), landmarks.landmark(397).y(), landmarks.landmark(397).z();
     p4 << landmarks.landmark(172).x(), landmarks.landmark(172).y(), landmarks.landmark(172).z();
     p3mid = (p3 + p4) / 2;
 
+    // 4. Calculate roll, pitch, and yaw.
+    Eigen::Vector3f plane0, plane1, plane2, a, b, c;
+    a = plane0 = p1;
+    b = plane1 = p2;
+    c = plane2 = p3mid;
+
+    Eigen::Vector3f qb = b - a;
+    Eigen::Vector3f qc = c - a;
+    Eigen::Vector3f n = qb.cross(qc);
+
+    Eigen::Vector3f unitZ = n.normalized();
+    Eigen::Vector3f unitX = qb.normalized();
+    Eigen::Vector3f unitY = unitZ.cross(unitX);
+
+    auto beta = std::asin(unitZ.x());
+    auto alpha = std::atan2(-unitZ.y(), unitZ.z());
+    auto gamma = std::atan2(-unitY.x(), unitX.x());
+
+    Eigen::Vector3f rotate;
+    rotate << normalizeAngle(alpha), normalizeAngle(beta), normalizeAngle(gamma);
+
+    Eigen::Vector3f midPoint = (plane0 + plane1) / 2;
+    Eigen::Vector3f widthVector = plane0 - plane1;
+    auto width = widthVector.norm();
+    Eigen::Vector3f heightVector = midPoint - plane2;
+    auto height = heightVector.norm();
+
+    rotate.x() *= -1;
+    rotate.z() *= -1;
+
+    // Set kalidokit data.
     auto kalidokit_data = absl::make_unique<KalidokitData>();
-    auto head_data = absl::make_unique<HeadData>();
-    auto head_data_degrees = absl::make_unique<HeadData_Degrees>();
+    
+    // Set head data.
+    auto head = absl::make_unique<Head>();
+    auto position = absl::make_unique<Position>();
+    auto normalized = absl::make_unique<Normalized>();
+    auto degrees = absl::make_unique<Degrees>();
 
-    head_data_degrees->set_x(0.5);
-    head_data_degrees->set_y(0.4);
-    head_data_degrees->set_z(0.3);
-    ::mediapipe::HeadData_Degrees *head_data_degrees_pointer = head_data_degrees.release();
+    // Set degree data.
+    degrees->set_x(rotate.x() * 180);
+    degrees->set_y(rotate.y() * 180);
+    degrees->set_z(rotate.z() * 180);
+    ::mediapipe::Degrees *degrees_pointer = degrees.release();
 
-    head_data->set_allocated_degrees(head_data_degrees_pointer);
-    head_data->set_x(0.8);
-    head_data->set_y(0.7);
-    head_data->set_z(0.6);
-    head_data->set_width(100);
-    head_data->set_height(200);
-    ::mediapipe::HeadData *head_data_pointer = head_data.release();
+    // Set normalized data.
+    normalized->set_x(rotate.x());
+    normalized->set_y(rotate.y());
+    normalized->set_z(rotate.z());
+    ::mediapipe::Normalized *normalized_pointer = normalized.release();
 
-    kalidokit_data->set_allocated_head_data(head_data_pointer);
+    // Set position data.
+    Eigen::Vector3f position_vector = (midPoint + plane1) / 2;
+    position->set_x(position_vector.x());
+    position->set_y(position_vector.y());
+    position->set_z(position_vector.z());
+    ::mediapipe::Position *position_pointer = position.release();
 
+    // Set head data.
+    head->set_allocated_degrees(degrees_pointer);
+    head->set_allocated_normalized(normalized_pointer);
+    head->set_allocated_position(position_pointer);
+    head->set_x(rotate.x() * PI);
+    head->set_y(rotate.y() * PI);
+    head->set_z(rotate.z() * PI);
+    head->set_width(width);
+    head->set_height(height);
+    ::mediapipe::Head *head_pointer = head.release();
+
+    // Set kalidokit data.
+    kalidokit_data->set_allocated_head(head_pointer);
+
+    // Send return data to ouput packet.
     cc->Outputs()
         .Tag(kKalidokitDataTag)
         .Add(kalidokit_data.release(), cc->InputTimestamp());
